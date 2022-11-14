@@ -1,0 +1,37 @@
+from:
+    uri: "direct:start"
+    steps:
+      - to:
+          uri: "log:info"
+
+from:
+  uri: "direct:start"
+  steps:
+    - choice:
+        precondition: true
+        when:
+          - simple: "${header.foo} == 'bar'"
+            steps:
+              - to: "log:info"
+          - simple: "${header.foo} == 'cheese'"
+            steps:
+              - to: "log:info"
+        otherwise:
+          steps:
+            - to: "log:info"
+
+
+from:
+  uri: "direct:start"
+  steps:
+    - choice:
+        when:
+          - simple: "${body} == 'bar'"
+            steps:
+              - to: "log:bar"
+          - simple: "${body} == 'cheese'"
+            steps:
+              - to: "log:cheese"
+        otherwise:
+          steps:
+            - to: "log:otherwise"

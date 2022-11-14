@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JIT Camel DSL!</title>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly-additions.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.css"/>
+
+    <style>
+        #dsl {
+          resize: none;
+          overflow: hidden;
+          min-height: 300px;
+          max-height: 300px;
+      }
+    </style>
+
+    <style>
+        #input {
+          resize: none;
+          overflow: hidden;
+          min-height: 300px;
+          max-height: 300px;
+      }
+    </style>
+
+    <style>
+        #logs {
+          resize: none;
+          overflow: hidden;
+          min-height: 300px;
+          max-height: 300px;
+      }
+    </style>
+
+    <style>
+        .column {
+             width:50%;
+             float:left
+        }
+    </style>
+
+    <style>
+    #editor {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+    </style>
+</head>
+
+<body>
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="/">
+            <p><strong>>> JIT Camel DSL!</strong></p>
+        </a>
+    </div>
+</nav>
+
+<div class="container">
+    <br/>
+    <div class="row">
+        <div class="column">
+            <div class="col-md-12">
+                <h2>Insert your route!</h2>
+               <div id="dsl">from:
+  uri: "direct:start"
+  steps:
+    - choice:
+        when:
+          - simple: "${body} == 'bar'"
+            steps:
+              - to: "log:bar"
+          - simple: "${body} == 'cheese'"
+            steps:
+              - to: "log:cheese"
+        otherwise:
+          steps:
+            - to: "log:otherwise"
+               </div>
+                <button id="senddsl" class="col-md-1 btn btn-primary" type="button">create</button>
+        </div>
+        </div>
+        <div class="column">
+            <div class="col-md-12">
+                <h2>Insert your input event!</h2>
+                <div id="input">bar</div>
+                <button id="sendinput" class="col-md-1 btn btn-primary" type="button">send</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="container">
+    <br/>
+    <div class="row">
+        <h2>Logs</h2>
+        <textarea class="col-md-12" id="logs"></textarea>
+    </div>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
+<script src="/js/ace.js" type="text/javascript" charset="utf-8"></script>
+
+<script type="text/javascript">
+
+var editordsl = ace.edit("dsl");
+editordsl.setTheme("ace/theme/monokai");
+editordsl.session.setMode("ace/mode/yaml");
+
+var editorinput = ace.edit("input");
+editorinput.setTheme("ace/theme/monokai");
+editorinput.session.setMode("ace/mode/text");
+
+var connected = false;
+var socket;
+
+function uuidv4() {
+return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+  (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+);
+}
+
+function createDSL() {
+    var id = uuidv4();
+    console.log(id);
+    var dsl = $("#dsl").val();
+    connect(id);
+}
+
+$( document ).ready(function() {
+  $("#senddsl").click(createDSL);
+  $("#sendinput").click(sendMessage);
+$("#logs").change(function() {
+    scrollToBottom();
+  });
+
+  $("#dsl").focus();
+});
+
+var connect = function(id) {
+  if (connected){
+    console.log("closing socket")
+    socket.close();
+    connected = false;
+  }
+
+  if (! connected) {
+      var dsl = editordsl.getValue();
+      console.log("Val: " + id);
+      socket = new WebSocket("ws://" + location.host + "/websockets/" + id);
+      socket.onopen = function() {
+          connected = true;
+          console.log("Connected to the web socket");
+          $("#dsl").attr("disabled", false);
+<!--                  $("#senddsl").attr("disabled", true);-->
+          $("#logs").focus();
+
+          fetch('/camel/jit/' + id, {
+              method: 'POST',
+              headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'text/plain'
+              },
+              body: dsl
+          })
+
+          .then(function(response) {
+            if (response.status != 200){ response.text()
+            .then(data => alert(data));
+            } else {
+              console.log("route created successfully")
+              }
+            }
+          );
+      };
+      socket.onmessage =function(m) {
+          var d = new Date();
+          console.log("Got message: " + m.data);
+          $("#logs").append(d.toLocaleString() + ": " + m.data + "\n");
+          scrollToBottom();
+      };
+  }
+};
+
+var sendMessage = function() {
+  if (connected) {
+      var value = editorinput.getValue();
+      console.log("Sending " + value);
+      socket.send(value);
+  }
+};
+
+var scrollToBottom = function () {
+    $('#logs').scrollTop($('#logs')[0].scrollHeight);
+};
+
+    </script>
+</body>
+
+</html>
