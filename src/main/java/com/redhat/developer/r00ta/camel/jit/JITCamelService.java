@@ -17,6 +17,7 @@ import org.apache.camel.support.ResourceHelper;
 public class JITCamelService {
 
     private final ConcurrentHashMap<String, CamelContext> contexts = new ConcurrentHashMap<>();
+
     @Inject
     SessionService sessionService;
 
@@ -28,15 +29,15 @@ public class JITCamelService {
         template.sendBody("direct:start", message);
     }
 
-    public void removeRoute(String uuid) {
-        CamelContext context = contexts.get(uuid);
+    public void removeRoute(String sessionId) {
+        CamelContext context = contexts.get(sessionId);
         context.stop();
-        contexts.remove(uuid);
+        contexts.remove(sessionId);
     }
 
-    public void postRoute(String myRoute, String uuid) {
-        if (!sessionService.sessionExists(uuid)) {
-            throw new RuntimeException("Session " + uuid + " does not exist.");
+    public void postRoute(String myRoute, String sessionId) {
+        if (!sessionService.sessionExists(sessionId)) {
+            throw new RuntimeException("Session " + sessionId + " does not exist.");
         }
         if (!myRoute.startsWith("from:\n" +
                                         "  uri: \"direct:start\"")) {
@@ -47,7 +48,7 @@ public class JITCamelService {
 
         try {
             // TODO: refactor PLZ :) :) :)
-            String prefix = "- route: \n    id: \"" + uuid + "\"\n";
+            String prefix = "- route: \n    id: \"" + sessionId + "\"\n";
 
             myRoute = prefix + "    " + myRoute.replace("\n", "\n    ");
 
@@ -62,8 +63,8 @@ public class JITCamelService {
             throw new RuntimeException(e);
         }
 
-        sessionService.sendToSession(uuid, "Route has been created and it's ready to process events!");
+        sessionService.sendToSession(sessionId, "Route has been created and it's ready to process events!");
         context.start();
-        contexts.put(uuid, context);
+        contexts.put(sessionId, context);
     }
 }
