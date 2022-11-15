@@ -16,10 +16,9 @@ import org.apache.camel.support.ResourceHelper;
 @Singleton
 public class JITCamelService {
 
+    private final ConcurrentHashMap<String, CamelContext> contexts = new ConcurrentHashMap<>();
     @Inject
     SessionService sessionService;
-
-    private final ConcurrentHashMap<String, CamelContext> contexts = new ConcurrentHashMap<>();
 
     public void sendMessage(String sessionId, String message) {
         CamelContext context = this.contexts.get(sessionId);
@@ -40,7 +39,7 @@ public class JITCamelService {
             throw new RuntimeException("Session " + uuid + " does not exist.");
         }
         if (!myRoute.startsWith("from:\n" +
-                                        "  uri: \"direct:start\"")){
+                                        "  uri: \"direct:start\"")) {
             throw new RuntimeException("Route must start with `from:\n  uri: \"direct:start\"`");
         }
 
@@ -68,15 +67,3 @@ public class JITCamelService {
         contexts.put(uuid, context);
     }
 }
-
-/*
- * from:
- *     uri: "timer:tick"
- *     parameters:
- *       period: 1000
- *     steps:
- *       - set-body:
- *           constant: "Welcome to Apache Camel KA"
- *       - to:
- *           uri: "log:info"
- */

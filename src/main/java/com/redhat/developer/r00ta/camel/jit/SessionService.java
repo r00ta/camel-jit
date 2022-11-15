@@ -6,8 +6,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Singleton;
 import javax.websocket.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Singleton
 public class SessionService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionService.class);
 
     Map<String, Session> sessions = new ConcurrentHashMap<>(); // (2)
 
@@ -26,7 +31,7 @@ public class SessionService {
     public void sendToSession(String sessionId, String message) {
         sessions.get(sessionId).getAsyncRemote().sendObject(message, result -> {
             if (result.getException() != null) {
-                System.out.println("Unable to send message: " + result.getException());
+                LOGGER.warn("Unable to send message: " + result.getException() + ". SessionId='" + sessionId + "'.");
             }
         });
     }
