@@ -14,7 +14,7 @@ public class SessionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionService.class);
 
-    Map<String, Session> sessions = new ConcurrentHashMap<>(); // (2)
+    Map<String, Session> sessions = new ConcurrentHashMap<>(); 
 
     public void addSession(String id, Session session) {
         this.sessions.put(id, session);
