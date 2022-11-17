@@ -141,7 +141,7 @@ var connect = function(id) {
   if (! connected) {
       var dsl = editordsl.getValue();
       console.log("Val: " + id);
-      socket = new WebSocket("ws://" + location.host + "/websockets/" + id);
+      socket = new WebSocket("wss://" + location.host + "/websockets/" + id);
       socket.onopen = function() {
           connected = true;
           console.log("Connected to the web socket");
