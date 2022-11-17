@@ -1,0 +1,44 @@
+html, body {
+    min-height: 100%;
+    height: 100%;
+    font-size: 100%;
+}
+
+.fill {
+    min-height: 100%;
+    height: 100%;
+}
+
+#dsl {
+  resize: none;
+  overflow: hidden;
+  min-height: 300px;
+  max-height: 300px;
+}
+
+#input {
+  resize: none;
+  overflow: hidden;
+  min-height: 300px;
+  max-height: 300px;
+}
+
+#logs {
+  resize: none;
+  overflow: hidden;
+  min-height: 300px;
+  max-height: 300px;
+}
+
+.column {
+     width:50%;
+     float:left
+}
+
+#editor {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}

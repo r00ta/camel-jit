@@ -1,5 +1,9 @@
 package com.redhat.developer.r00ta.camel.jit;
 
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Exchange;
 import org.apache.camel.spi.CamelLogger;
 import org.apache.camel.spi.LogListener;
@@ -19,10 +23,17 @@ public class MyLogListener implements LogListener {
     @Override
     public String onLog(Exchange exchange, CamelLogger camelLogger, String message) {
         try {
-            this.sessionService.sendToSession(exchange.getFromRouteId(), "LOGGER NAME: " + camelLogger.getLog().getName() + ". MESSAGE: " + exchange.getIn().getBody().toString());
+            String socketMessage = String.format("\uD83D\uDCE9 %s: %s. Headers: %s.", camelLogger.getLog().getName(),
+                                          message.startsWith("Exchange[") ?  exchange.getMessage().getBody().toString() : message,
+                                                 message.startsWith("Exchange[") ? exchange.getMessage().getHeaders() : null);
+            this.sessionService.sendToSession(exchange.getFromRouteId(), socketMessage);
         } catch (Exception e) {
             LOGGER.warn(e.getMessage());
         }
         return String.format("%s: %s", exchange.getFromRouteId(), exchange.getMessage().getBody());
+    }
+
+    private String serializaHeaders(Map<String, Object> headers) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(headers);
     }
 }
