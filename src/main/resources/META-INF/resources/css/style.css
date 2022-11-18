@@ -19,8 +19,15 @@ html, body {
 #input {
   resize: none;
   overflow: hidden;
-  min-height: 300px;
-  max-height: 300px;
+  min-height: 150px;
+  max-height: 150px;
+}
+
+#headers {
+  resize: none;
+  overflow: hidden;
+  min-height: 150px;
+  max-height: 150px;
 }
 
 #logs {

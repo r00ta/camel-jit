@@ -10,8 +10,11 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.developer.r00ta.camel.jit.JITCamelService;
 import com.redhat.developer.r00ta.camel.jit.SessionService;
+import com.redhat.developer.r00ta.camel.jit.models.JITMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +23,9 @@ import org.slf4j.LoggerFactory;
 public class SessionSocket {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionSocket.class);
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Inject
     SessionService sessionService;
@@ -51,7 +57,13 @@ public class SessionSocket {
         if (message.equalsIgnoreCase("_ready_")) {
             LOGGER.info(String.format("websocket '%s' is ready", sessionId));
         } else {
-            camelService.sendMessage(sessionId, message);
+            JITMessage jitMessage = null;
+            try {
+                jitMessage = objectMapper.readValue(message, JITMessage.class);
+            } catch (JsonProcessingException e) {
+                LOGGER.warn("Impossible to deserialize the message from socket '{}'", sessionId);
+            }
+            camelService.sendMessage(sessionId, jitMessage);
         }
     }
 }

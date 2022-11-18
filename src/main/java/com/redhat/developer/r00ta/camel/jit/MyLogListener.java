@@ -30,7 +30,7 @@ public class MyLogListener implements LogListener {
         } catch (Exception e) {
             LOGGER.warn(e.getMessage());
         }
-        return String.format("%s: %s", exchange.getFromRouteId(), exchange.getMessage().getBody());
+        return String.format("New log processed for route '%s'", exchange.getFromRouteId()); // Do not log user's data on the server.
     }
 
     private String serializaHeaders(Map<String, Object> headers) throws JsonProcessingException {

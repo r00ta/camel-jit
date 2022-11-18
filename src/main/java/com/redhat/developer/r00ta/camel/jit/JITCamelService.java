@@ -1,8 +1,10 @@
 package com.redhat.developer.r00ta.camel.jit;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.redhat.developer.r00ta.camel.jit.models.JITMessage;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.ProducerTemplate;
@@ -23,11 +25,15 @@ public class JITCamelService {
     @Inject
     SessionService sessionService;
 
-    public void sendMessage(String sessionId, String message) {
-        ProducerTemplate template = camelContext.createProducerTemplate();
+    @PostConstruct
+    void init(){
+        ExtendedCamelContext extendedCamelContext = camelContext.adapt(ExtendedCamelContext.class);
+        extendedCamelContext.addLogListener(new MyLogListener(sessionService));
+    }
 
-        // TODO: refactor plz :) :)
-        template.sendBody("direct:" + sessionId, message);
+    public void sendMessage(String sessionId, JITMessage jitMessage) {
+        ProducerTemplate template = camelContext.createProducerTemplate();
+        template.sendBodyAndHeaders("direct:" + sessionId, jitMessage.getBody(), jitMessage.getHeaders());
     }
 
     public void removeRoute(String sessionId) {
@@ -54,15 +60,11 @@ public class JITCamelService {
         try {
             // TODO: refactor PLZ :) :) :)
             String prefix = "- route: \n    id: \"" + sessionId + "\"\n";
-
             myRoute = prefix + "    " + myRoute.replace("\n", "\n    ");
 
             ExtendedCamelContext extendedCamelContext = camelContext.adapt(ExtendedCamelContext.class);
-            if (extendedCamelContext.getLogListeners() == null || extendedCamelContext.getLogListeners().size() == 0) {
-                extendedCamelContext.addLogListener(new MyLogListener(sessionService));
-            }
             RoutesLoader loader = extendedCamelContext.getRoutesLoader();
-            Resource resource = ResourceHelper.fromString("lololol.yaml", myRoute);
+            Resource resource = ResourceHelper.fromString("input.yaml", myRoute);
             loader.loadRoutes(resource);
         } catch (Exception e) {
             throw new RuntimeException(e);
